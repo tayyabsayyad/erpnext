@@ -18,7 +18,7 @@ QUnit.test("test: lead", function (assert) {
 });
 
 QUnit.test("test: opportunity", function (assert) {
-	assert.expect(1);
+	assert.expect(22);
 	let done = assert.async();
 	frappe.run_serially([
 		() => {
@@ -37,9 +37,10 @@ QUnit.test("test: opportunity", function (assert) {
 	]);
 });
 
-QUnit.test("test: quotation", function (assert) {
-	assert.expect(18);
+QUnit.only("test: quotation", function (assert) {
+	assert.expect(22);
 	let done = assert.async();
+	let today = new Date();
 	frappe.run_serially([
 		() => frappe.tests.setup_doctype("Customer"),
 		() => frappe.tests.setup_doctype("Item"),
@@ -55,10 +56,10 @@ QUnit.test("test: quotation", function (assert) {
 			{
 				items: [
 					[{
-						"item_code": "Test Product 1"
+						"qty": 5
 					},
 					{
-						"qty": 5
+						"item_code": "Test Product 1"
 					}
 					]
 				]
@@ -106,6 +107,7 @@ QUnit.test("test: quotation", function (assert) {
 			assert.ok(cur_frm.doc.grand_total == 1180, "Tax Amount Added to Total");
 			assert.ok(cur_frm.doc.taxes_and_charges == "TEST In State GST", "Tax Template Selected");
 		},
+		// Print View Tes
 		() => frappe.timeout(0.3),
 		() => cur_frm.print_doc(),
 		() => frappe.timeout(1),
@@ -115,6 +117,49 @@ QUnit.test("test: quotation", function (assert) {
 		() => assert.ok($(".section-break+ .section-break .column-break:nth-child(1) .data-field:nth-child(1) .value").text().includes("Billing Street 1"), "Print Preview Works As Expected"),
 		() => frappe.timeout(0.3),
 		() => cur_frm.print_doc(),
+		// Submit Check
+		() => frappe.timeout(1),
+		() => cur_frm.savesubmit(),
+		() => frappe.timeout(1.5),
+		() => cur_dialog.primary_action(),
+		() => frappe.timeout(1.5),
+		() => cur_dialog.set_value("recipients", "yo@example.com"),
+		() => frappe.timeout(1.5),
+		() => cur_dialog.primary_action(),
+		() => frappe.timeout(7),
+		() => assert.ok(cur_frm.doc.status == "Replied", "Quotation Submitted"),
+		() => frappe.timeout(0.3),
+		// Cancel Check
+		() => cur_frm.savecancel(),
+		() => frappe.timeout(1.5),
+		() => cur_dialog.primary_action(),
+		() => frappe.timeout(1.5),
+		() => assert.ok(cur_frm.doc.status == "Cancelled", "Quotation Cancelled"),
+		// Ammend Check
+		() => cur_frm.amend_doc(),
+		() => cur_frm.save(),
+		() => frappe.timeout(0.5),
+		() => assert.ok(cur_frm.doc.status == "Draft", "Quotation Ammended"),
+
+		// Make Sales Order
+		() => frappe.timeout(1),
+		() => cur_frm.savesubmit(),
+		() => frappe.timeout(0.5),
+		() => cur_dialog.primary_action(),
+		() => frappe.timeout(0.5),
+		() => cur_dialog.set_value("recipients", "yo@example.com"),
+		() => frappe.timeout(0.5),
+		() => cur_dialog.primary_action(),
+		() => frappe.timeout(0.5),
+		() => ($(".form-inner-toolbar .btn-xs:nth-child(1)").click()),
+		() => frappe.timeout(0.5),
+		() => cur_frm.set_value('delivery_date',tom.getDate() + '-' + tom.getMonth() + '-' + tom.getFullYear()),
+		() => cur_frm.save(),
+		() => cur_frm.save(),
+		() => cur_frm.savesubmit(),
+		() => frappe.timeout(0.5),
+		() => cur_dialog.primary_action(),
+		() => assert.ok(cur_frm.doc.status == "To Deliver and Bill", "Sales Order made from Quotation"),
 		() => done()
 	]);
 });
