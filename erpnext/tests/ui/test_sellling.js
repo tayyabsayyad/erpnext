@@ -37,10 +37,10 @@ QUnit.test("test: opportunity", function (assert) {
 	]);
 });
 
-QUnit.only("test: quotation", function (assert) {
+QUnit.test("test: quotation", function (assert) {
 	assert.expect(22);
 	let done = assert.async();
-	let today = new Date();
+	// let today = moment(new Date()).add(1,'days');
 	frappe.run_serially([
 		() => frappe.tests.setup_doctype("Customer"),
 		() => frappe.tests.setup_doctype("Item"),
@@ -107,7 +107,7 @@ QUnit.only("test: quotation", function (assert) {
 			assert.ok(cur_frm.doc.grand_total == 1180, "Tax Amount Added to Total");
 			assert.ok(cur_frm.doc.taxes_and_charges == "TEST In State GST", "Tax Template Selected");
 		},
-		// Print View Tes
+		// Print View Test
 		() => frappe.timeout(0.3),
 		() => cur_frm.print_doc(),
 		() => frappe.timeout(1),
@@ -144,21 +144,20 @@ QUnit.only("test: quotation", function (assert) {
 		// Make Sales Order
 		() => frappe.timeout(1),
 		() => cur_frm.savesubmit(),
-		() => frappe.timeout(0.5),
+		() => frappe.timeout(2),
 		() => cur_dialog.primary_action(),
-		() => frappe.timeout(0.5),
+		() => frappe.timeout(3),
 		() => cur_dialog.set_value("recipients", "yo@example.com"),
-		() => frappe.timeout(0.5),
 		() => cur_dialog.primary_action(),
-		() => frappe.timeout(0.5),
+		() => frappe.timeout(7),
 		() => ($(".form-inner-toolbar .btn-xs:nth-child(1)").click()),
-		() => frappe.timeout(0.5),
-		() => cur_frm.set_value('delivery_date',tom.getDate() + '-' + tom.getMonth() + '-' + tom.getFullYear()),
-		() => cur_frm.save(),
+		() => frappe.timeout(3),
+		() => cur_frm.set_value('delivery_date', frappe.datetime.add_days(frappe.datetime.nowdate(), 20)),
 		() => cur_frm.save(),
 		() => cur_frm.savesubmit(),
 		() => frappe.timeout(0.5),
 		() => cur_dialog.primary_action(),
+		() => frappe.timeout(1.5),
 		() => assert.ok(cur_frm.doc.status == "To Deliver and Bill", "Sales Order made from Quotation"),
 		() => done()
 	]);
